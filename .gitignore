@@ -1,0 +1,3 @@
+*.csv
+etl-thi-cu.json
+__pycache__/

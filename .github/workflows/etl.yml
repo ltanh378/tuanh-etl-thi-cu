@@ -1,0 +1,20 @@
+name: Thi Cú ETL Pipeline
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # 4h/lần
+  workflow_dispatch:
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    - run: pip install -r requirements.txt
+    - name: Run ETL
+      env:
+        RAW_FOLDER_ID: ${{ secrets.RAW_FOLDER_ID }}
+        CLEAN_FOLDER_ID: ${{ secrets.CLEAN_FOLDER_ID }}
+        SERVICE_JSON: ${{ secrets.SERVICE_JSON }}
+      run: python etl.py
