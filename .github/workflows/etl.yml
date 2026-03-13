@@ -1,17 +1,20 @@
 name: Thi Cú ETL Pipeline
 on:
   schedule:
-    - cron: '0 */4 * * *'  # 4h/lần
+    - cron: '0 */4 * * *'
   workflow_dispatch:
 jobs:
   etl:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5  # ← Fix Node 20 warning
       with:
         python-version: '3.11'
-    - run: pip install -r requirements.txt
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas openpyxl google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib
     - name: Run ETL
       env:
         RAW_FOLDER_ID: ${{ secrets.RAW_FOLDER_ID }}
