@@ -50,13 +50,19 @@ print(f"✅ ETL: {len(df_clean)} rows")
 df_clean.to_csv('final_thi_cu.csv', index=False, encoding='utf-8-sig')
 
 with open('final_thi_cu.csv', 'rb') as f:
+    # Try to remove existing file first (for upsert behavior)
+    try:
+        supabase.storage.from_('powerbi-data').remove(['final_thi_cu.csv'])
+    except:
+        pass  # File doesn't exist yet, that's ok
+    
+    # Upload new file
     supabase.storage.from_('powerbi-data').upload(
         path='final_thi_cu.csv',
         file=f,
         file_options={
             "content-type": "text/csv; charset=utf-8",
-            "cache-control": "3600",
-            "upsert": True
+            "cache-control": "3600"
         }
     )
 
