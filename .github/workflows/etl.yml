@@ -1,4 +1,4 @@
-name: Thi Cú ETL Pipeline
+name: Thi Cú ETL → Supabase
 on:
   schedule:
     - cron: '0 */4 * * *'
@@ -6,35 +6,22 @@ on:
 jobs:
   etl:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
+    - uses: actions/checkout@v4
     
-    - name: Setup Python
-      uses: actions/setup-python@v5
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     
-    - name: Install Python packages
+    - name: Install Python
       run: |
-        python -m pip install --upgrade pip
-        pip install pandas==2.2.1 openpyxl==3.1.2 "google-api-python-client>=2.100.0" "google-auth>=2.25.0" "google-auth-httplib2>=0.1.0" "google-auth-oauthlib>=1.0.0"
+        pip install pandas openpyxl google-api-python-client google-auth google-auth-httplib2 google-auth-oauthlib supabase
     
-    - name: Debug secrets
-      env:
-        RAW_FOLDER_ID: ${{ secrets.RAW_FOLDER_ID }}
-        CLEAN_FOLDER_ID: ${{ secrets.CLEAN_FOLDER_ID }}
-      run: |
-        echo "RAW_FOLDER_ID length: ${#RAW_FOLDER_ID}"
-        echo "CLEAN_FOLDER_ID length: ${#CLEAN_FOLDER_ID}"
-    
-    - name: Run ETL Pipeline
+    - name: ETL + Upload Supabase
       env:
         RAW_FOLDER_ID: ${{ secrets.RAW_FOLDER_ID }}
         CLEAN_FOLDER_ID: ${{ secrets.CLEAN_FOLDER_ID }}
         SERVICE_JSON: ${{ secrets.SERVICE_JSON }}
-      run: python etl.py
+        SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      run: python etl_supabase.py
