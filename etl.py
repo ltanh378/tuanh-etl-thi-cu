@@ -2,15 +2,10 @@ import pandas as pd
 import json, os, sys
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload  # ← THÊM DÒNG NÀY
+from googleapiclient.http import MediaIoBaseDownload
 import io
 
-print("🚀 Bắt đầu ETL Thi Cú...")
-
-# Check secrets
-if not all([os.getenv('RAW_FOLDER_ID'), os.getenv('CLEAN_FOLDER_ID'), os.getenv('SERVICE_JSON')]):
-    print("❌ ERROR: Thiếu secrets!")
-    sys.exit(1)
+print("🚀 Bắt đầu ETL Thi Cú FINAL...")
 
 try:
     # Auth Google Drive
@@ -47,31 +42,20 @@ try:
         dfs.append(df)
         print(f"✅ {file['name']}: {len(df)} rows")
     
-    # ETL Logic cho data thi cú
+    # 🔥 ETL Logic cho data thi cú
     df_raw = pd.concat(dfs, ignore_index=True)
     df_raw['Ngày thi'] = pd.to_datetime(df_raw['Ngày thi'])
     df_raw['Tỷ lệ Pass %'] = (df_raw['Số lượt Pass thực tế'] / df_raw['Số lượt thi thực tế'].replace(0, 1) * 100).round(2)
+    df_raw['Tình trạng'] = df_raw['Số lượt thi thực tế'].apply(lambda x: 'Chưa thi' if x == 0 else 'Đã thi')
     df_clean = df_raw.sort_values('Ngày thi', ascending=False)
     
-    # Save CSV
+    # 💾 Save FINAL CSV (KHÔNG UPLOAD - Power BI đọc trực tiếp)
     df_clean.to_csv('final_thi_cu.csv', index=False, encoding='utf-8-sig')
-    print(f"💾 Export: {len(df_clean)} rows")
+    print(f"💾 EXPORT HOÀN THÀNH: {len(df_clean)} rows")
+    print("📊 CỘT MỚI: Ngày thi, Tỷ lệ Pass %, Tình trạng")
+    print("🔗 DOWNLOAD FILE TẠI: ${{ github.workspace }}/final_thi_cu.csv")
     
-    # Upload (overwrite)
-    clean_folder_id = os.getenv('CLEAN_FOLDER_ID')
-    
-    # Delete old file
-    old_files = service.files().list(q=f"name='final_thi_cu.csv' and '{clean_folder_id}' in parents").execute()
-    for old_file in old_files.get('files', []):
-        service.files().delete(fileId=old_file['id']).execute()
-    
-    # Upload new file
-    file_metadata = {'name': 'final_thi_cu.csv', 'parents': [clean_folder_id]}
-    media = MediaFileUpload('final_thi_cu.csv', mimetype='text/csv')
-    file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-    
-    print(f"✅ UPLOAD THÀNH CÔNG! File ID: {file['id']}")
-    print(f"🎉 ETL HOÀN THÀNH 100%! Dashboard sẵn sàng refresh!")
+    print("🎉 ETL 100% THÀNH CÔNG! Sẵn sàng Power BI!")
     
 except Exception as e:
     print(f"❌ Lỗi: {str(e)}")
