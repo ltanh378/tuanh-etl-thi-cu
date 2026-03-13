@@ -2,7 +2,7 @@ import pandas as pd
 import json, os, sys
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload  # ← THÊM DÒNG NÀY
 import io
 
 print("🚀 Bắt đầu ETL Thi Cú...")
@@ -34,7 +34,7 @@ try:
         sys.exit(0)
     
     dfs = []
-    for file in xlsx_files[:3]:  # Max 3 files/test
+    for file in xlsx_files:
         print(f"⏳ Đang đọc {file['name']}...")
         request = service.files().get_media(fileId=file['id'])
         fh = io.BytesIO()
@@ -59,16 +59,19 @@ try:
     
     # Upload (overwrite)
     clean_folder_id = os.getenv('CLEAN_FOLDER_ID')
-    file_metadata = {'name': 'final_thi_cu.csv', 'parents': [clean_folder_id]}
     
-    # Delete old file first
+    # Delete old file
     old_files = service.files().list(q=f"name='final_thi_cu.csv' and '{clean_folder_id}' in parents").execute()
     for old_file in old_files.get('files', []):
         service.files().delete(fileId=old_file['id']).execute()
     
+    # Upload new file
+    file_metadata = {'name': 'final_thi_cu.csv', 'parents': [clean_folder_id]}
     media = MediaFileUpload('final_thi_cu.csv', mimetype='text/csv')
     file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-    print(f"✅ Upload thành công! File ID: {file['id']}")
+    
+    print(f"✅ UPLOAD THÀNH CÔNG! File ID: {file['id']}")
+    print(f"🎉 ETL HOÀN THÀNH 100%! Dashboard sẵn sàng refresh!")
     
 except Exception as e:
     print(f"❌ Lỗi: {str(e)}")
